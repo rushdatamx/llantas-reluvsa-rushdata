@@ -58,7 +58,7 @@ export default function LoginPage() {
               Convierte chats en ventas.
             </h1>
             <p className="text-lg text-gray-400">
-              Cotiza. Cobra. Cierra. En piloto automático.
+              Cotiza. Cobra. Cierra. En piloto automático con <span className="text-gray-600 font-medium">RushData</span>.
             </p>
           </div>
 
