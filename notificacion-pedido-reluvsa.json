@@ -1,0 +1,100 @@
+{
+    "name": "notificacion-pedido-reluvsa",
+    "nodes": [
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={ \"success\": true }",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.4,
+        "position": [
+          448,
+          0
+        ],
+        "id": "39f8753c-e986-48be-a732-0ac8c3f08239",
+        "name": "Respond to Webhook"
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "/order-notification",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "65101263-1214-485c-89e0-cb7c90fca148",
+        "name": "Webhook",
+        "webhookId": "284a7c66-ecae-4162-b055-f82d49a314ea"
+      },
+      {
+        "parameters": {
+          "from": "+14155238886",
+          "to": "={{ $json.body.telefono.replace('whatsapp:', '') }}",
+          "toWhatsapp": true,
+          "message": "={{ $json.body.mensaje }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.twilio",
+        "typeVersion": 1,
+        "position": [
+          224,
+          0
+        ],
+        "id": "0f62e95c-1e99-4f0d-abf5-10328d171993",
+        "name": "Send an SMS/MMS/WhatsApp message",
+        "credentials": {
+          "twilioApi": {
+            "id": "M4Hq8rmkk6VIp5nh",
+            "name": "RELUBOT"
+          }
+        }
+      }
+    ],
+    "pinData": {},
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Send an SMS/MMS/WhatsApp message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Respond to Webhook": {
+        "main": [
+          []
+        ]
+      },
+      "Send an SMS/MMS/WhatsApp message": {
+        "main": [
+          [
+            {
+              "node": "Respond to Webhook",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "active": false,
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "versionId": "e8dfbe30-46b1-4483-aa0e-fd2a613ba408",
+    "meta": {
+      "instanceId": "fbe45f72d67996772e988acbaa3e03aa85133141bf0471e27cfcd64ad5c75945"
+    },
+    "id": "pJCz6GKqECXp1q77",
+    "tags": []
+  }

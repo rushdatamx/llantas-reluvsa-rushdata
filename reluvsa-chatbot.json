@@ -1,0 +1,167 @@
+{
+  "name": "reluvsa-chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://olwnrcyfmmwbskvlvesa.supabase.co/functions/v1/chatbot-handler-v2",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sd25yY3lmbW13YnNrdmx2ZXNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcyNjQyNTcsImV4cCI6MjA3Mjg0MDI1N30.FGYKl01_RF9pekcKv0n_vthdu-s7NDkF0F2HawmCb4w"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"telefono\": \"{{ $json.body.From }}\",\n    \"mensaje\": \"{{ $json.body.Body }}\"\n  }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "dd0fab19-17ee-4456-8d12-39fffea34995",
+      "name": "chat-handler"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "3d62bdb9-997b-49c6-bbff-0f0fc88f723e",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -16,
+        0
+      ],
+      "id": "3ef953bf-ea80-4959-bade-5a7225f0ed0e",
+      "name": "twilio-whatsapp",
+      "webhookId": "3d62bdb9-997b-49c6-bbff-0f0fc88f723e"
+    },
+    {
+      "parameters": {
+        "from": "+14155238886",
+        "to": "=+{{ $('twilio-whatsapp').item.json.body.WaId }}",
+        "toWhatsapp": true,
+        "message": "={{ $json.respuesta }} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -176
+      ],
+      "id": "e935272d-5f4a-4ac2-977f-66efc236e526",
+      "name": "whatsapp-mensaje",
+      "credentials": {
+        "twilioApi": {
+          "id": "M4Hq8rmkk6VIp5nh",
+          "name": "RELUBOT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0f54fbb0-94bd-421a-a80f-9056d826191a",
+              "leftValue": "={{ $json.respuesta }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "9ab9b506-6543-4b41-8917-c64baae1a397",
+              "leftValue": "={{ $json.respuesta }}",
+              "rightValue": "__HANDOFF_ACTIVE__",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "35ea4902-a512-47aa-9f22-c2f4ba8f9b36",
+      "name": "IF: respuesta válida?"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "chat-handler": {
+      "main": [
+        [
+          {
+            "node": "IF: respuesta válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "twilio-whatsapp": {
+      "main": [
+        [
+          {
+            "node": "chat-handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: respuesta válida?": {
+      "main": [
+        [
+          {
+            "node": "whatsapp-mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "935305b6-d5d8-44bf-97ed-fa001b2ce477",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fbe45f72d67996772e988acbaa3e03aa85133141bf0471e27cfcd64ad5c75945"
+  },
+  "id": "g8pmEXcTbZyG6UrF",
+  "tags": []
+}
