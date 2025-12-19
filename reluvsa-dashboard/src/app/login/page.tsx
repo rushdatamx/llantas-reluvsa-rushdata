@@ -53,12 +53,12 @@ export default function LoginPage() {
       <main className="flex-1 flex items-center justify-center px-4">
         <div className="w-full max-w-[400px] space-y-8">
           {/* Título y descripción */}
-          <div className="text-center space-y-2">
+          <div className="text-center space-y-3">
             <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">
-              Tu asistente de ventas.
+              Convierte chats en ventas.
             </h1>
             <p className="text-lg text-gray-400">
-              Chatbot inteligente con links de pago automáticos.
+              Cotiza. Cobra. Cierra. En piloto automático.
             </p>
           </div>
 
