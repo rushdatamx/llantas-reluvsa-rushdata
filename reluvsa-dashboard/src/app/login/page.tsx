@@ -5,9 +5,9 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { IconLoader2 } from '@tabler/icons-react'
+import { Loader2 } from 'lucide-react'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -37,21 +37,37 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/40">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary">
-            <span className="text-2xl font-bold text-primary-foreground">R</span>
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Header con logo */}
+      <header className="p-6">
+        <Image
+          src="/rushdata-icono.png"
+          alt="RushData"
+          width={36}
+          height={36}
+          className="opacity-80"
+        />
+      </header>
+
+      {/* Contenido central */}
+      <main className="flex-1 flex items-center justify-center px-4">
+        <div className="w-full max-w-[400px] space-y-8">
+          {/* Título y descripción */}
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">
+              Tu asistente de ventas.
+            </h1>
+            <p className="text-lg text-gray-400">
+              Chatbot inteligente con links de pago automáticos.
+            </p>
           </div>
-          <CardTitle className="text-2xl">RELUVSA Dashboard</CardTitle>
-          <CardDescription>
-            Ingresa a tu cuenta para gestionar el chatbot
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+
+          {/* Formulario */}
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Correo electrónico</Label>
+              <Label htmlFor="email" className="text-sm text-gray-600">
+                Correo electrónico
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -59,10 +75,14 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="h-11 border-gray-200 focus:border-gray-300 focus:ring-0 placeholder:text-gray-300"
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password" className="text-sm text-gray-600">
+                Contraseña
+              </Label>
               <Input
                 id="password"
                 type="password"
@@ -70,21 +90,32 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="h-11 border-gray-200 focus:border-gray-300 focus:ring-0 placeholder:text-gray-300"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+
+            <Button
+              type="submit"
+              className="w-full h-11 bg-blue-500 hover:bg-blue-600 text-white font-medium"
+              disabled={loading}
+            >
               {loading ? (
                 <>
-                  <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Ingresando...
                 </>
               ) : (
-                'Ingresar'
+                'Continuar'
               )}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+
+          {/* Footer del formulario */}
+          <p className="text-center text-xs text-gray-400">
+            Panel de administración exclusivo para vendedores autorizados.
+          </p>
+        </div>
+      </main>
     </div>
   )
 }

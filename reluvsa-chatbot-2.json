@@ -19,10 +19,10 @@
     },
     {
       "parameters": {
-        "from": "+14155238886",
-        "to": "+5218114816346",
+        "from": "+15558712368",
+        "to": "={{ $json.body.telefono.replace('whatsapp:', '') }}",
         "toWhatsapp": true,
-        "message": "={{ $json.mensaje }}",
+        "message": "={{ $json.body.mensaje }}",
         "options": {}
       },
       "type": "n8n-nodes-base.twilio",
@@ -59,7 +59,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "42e4a05e-1789-42ef-a954-ca4b14c5ac9d",
+  "versionId": "959fa35c-24f6-48bd-b5b1-3b9d6275f329",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "fbe45f72d67996772e988acbaa3e03aa85133141bf0471e27cfcd64ad5c75945"

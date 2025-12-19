@@ -50,7 +50,7 @@
     },
     {
       "parameters": {
-        "from": "+14155238886",
+        "from": "+15558712368",
         "to": "=+{{ $('twilio-whatsapp').item.json.body.WaId }}",
         "toWhatsapp": true,
         "message": "={{ $json.respuesta }} ",
@@ -157,7 +157,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "935305b6-d5d8-44bf-97ed-fa001b2ce477",
+  "versionId": "a501fae8-16de-4944-84c9-74ddffca35d4",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "fbe45f72d67996772e988acbaa3e03aa85133141bf0471e27cfcd64ad5c75945"
