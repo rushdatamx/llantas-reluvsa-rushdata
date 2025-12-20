@@ -157,6 +157,7 @@ export function ChatArea({ sesion: initialSesion, initialMensajes }: ChatAreaPro
         .update({
           vendedor_asignado_id: currentUserId,
           vendedor_asignado_at: new Date().toISOString(),
+          atendido_por: 'vendedor',
         })
         .eq('id', sesion.id)
 
