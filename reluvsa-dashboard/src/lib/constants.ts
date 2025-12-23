@@ -54,4 +54,5 @@ export const NAV_ITEMS = [
   { title: 'Cotizador', href: '/cotizador', icon: 'IconCalculator' },
   { title: 'Inventario', href: '/inventario', icon: 'IconPackage' },
   { title: 'Pedidos', href: '/pedidos', icon: 'IconShoppingCart' },
+  { title: 'Analytics', href: '/analytics', icon: 'IconChartBar' },
 ]

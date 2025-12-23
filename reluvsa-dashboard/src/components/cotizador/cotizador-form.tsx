@@ -103,16 +103,36 @@ export function CotizadorForm({ productos }: CotizadorFormProps) {
   const [generatedPaymentLink, setGeneratedPaymentLink] = useState<string | null>(null)
   const [linkCopied, setLinkCopied] = useState(false)
 
+  // Normalizar medida para búsqueda flexible (similar al chatbot)
+  const normalizarParaBusqueda = (texto: string): string => {
+    return texto
+      .toLowerCase()
+      .replace(/\s+/g, '') // Eliminar espacios
+      .replace(/[\/\-\.]/g, '') // Eliminar separadores
+      .replace(/r/gi, '') // Eliminar R
+  }
+
   const filteredProductos = useMemo(() => {
     if (!searchQuery.trim()) return productos.slice(0, 20)
-    const query = searchQuery.toLowerCase()
+
+    const queryOriginal = searchQuery.toLowerCase().trim()
+    const queryNormalizada = normalizarParaBusqueda(searchQuery)
+
     return productos
-      .filter(
-        (p) =>
-          p.descripcion?.toLowerCase().includes(query) ||
-          p.medida?.toLowerCase().includes(query) ||
-          p.tag?.toLowerCase().includes(query)
-      )
+      .filter((p) => {
+        // Búsqueda normal en descripción y tag
+        const enDescripcion = p.descripcion?.toLowerCase().includes(queryOriginal)
+        const enTag = p.tag?.toLowerCase().includes(queryOriginal)
+
+        // Búsqueda flexible en medida (permite 205/, 205/55, 20555, etc.)
+        const medidaNormalizada = normalizarParaBusqueda(p.medida || '')
+        const enMedidaNormalizada = medidaNormalizada.includes(queryNormalizada)
+
+        // También buscar en medida original
+        const enMedidaOriginal = p.medida?.toLowerCase().includes(queryOriginal)
+
+        return enDescripcion || enTag || enMedidaNormalizada || enMedidaOriginal
+      })
       .slice(0, 20)
   }, [productos, searchQuery])
 
@@ -466,7 +486,7 @@ El link es seguro y puedes pagar con tarjeta de crédito o débito.
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[400px] p-0" align="start">
-                  <Command>
+                  <Command shouldFilter={false}>
                     <CommandInput
                       placeholder="Buscar por medida, marca o descripción..."
                       value={searchQuery}

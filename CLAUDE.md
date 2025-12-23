@@ -27,25 +27,38 @@ WhatsApp → Twilio → n8n Workflow → Supabase Edge Function (chatbot-handler
 
 ### Key Components
 
-- **n8n Workflows**: `reluvsa-chatbot.json` - receives webhooks from Twilio, calls Edge Function, sends responses
+- **n8n Workflows**: `reluvsa-chatbot.json` - receives webhooks from Twilio, calls Edge Function, sends responses. The workflow checks for `__HANDOFF_ACTIVE__` in responses to suppress bot replies when a vendor has taken over.
 - **Supabase Edge Functions**:
   - `chatbot-handler-v2` - Main AI chatbot logic (message processing, inventory lookup, payment link generation)
-  - `vendor-reply-v2` - Manual vendor responses
+  - `vendor-reply-v2` - Manual vendor responses from dashboard
   - `stripe-webhook` - Handles Stripe payment confirmations
-  - `order-notification` - Sends order notifications
+  - `order-notification` - Sends order status notifications via WhatsApp
   - `create-payment-link` - Creates Stripe payment links
 - **Dashboard**: Next.js 16 app with Supabase auth, shadcn/ui components
 
-### Database Tables (Supabase)
+### Chat Session State Machine
 
-Core tables for the chatbot:
-- `leads` - Customer leads with pipeline stages
-- `sesiones_chat` - Active chat sessions with conversation state
-- `mensajes` - Message history
-- `pedidos` - Orders with Stripe integration
-- `inventario` - Tire inventory (NEREUS and TORNEL brands)
-- `conversaciones` - Legacy conversation storage
-- `codigos_postales_locales` - Local zip codes for free shipping
+Sessions (`sesiones_chat`) track conversation state via the `estado` field:
+```
+inicio → buscando_medida → mostrando_opciones → seleccionando_producto
+  → pidiendo_cantidad → confirmando_cotizacion → pidiendo_nombre
+  → pidiendo_email → pidiendo_direccion → generando_link
+  → esperando_pago → completado
+```
+
+### Bot vs Vendor Handoff
+
+The `atendido_por` field in `sesiones_chat` controls who responds:
+- `'bot'` - AI handles responses automatically
+- `'vendedor'` - Bot is silenced; vendor responds manually via dashboard
+
+When `atendido_por = 'vendedor'`, the edge function returns `__HANDOFF_ACTIVE__` and n8n skips sending the bot response.
+
+### Pipeline Stages
+
+Leads flow through: `explorando` → `cotizado` → `link_enviado` → `pagado` → `entregado` (or `perdido`)
+
+Order state changes automatically sync the session's `pipeline_stage` via server actions.
 
 ## Commands
 
@@ -58,38 +71,28 @@ npm run build    # Production build
 npm run lint     # Run ESLint
 ```
 
-### Root (shadcn MCP)
+## Dashboard Patterns
 
-The root `package.json` only contains shadcn as a dev dependency for the MCP server.
+### Server Actions
+Located in `src/lib/actions/`. These call Supabase Edge Functions and handle path revalidation:
+- `payment-link.ts` - Creates Stripe payment links via edge function
+- `pedidos.ts` - Updates order status, tracking info, syncs pipeline stages
 
-## Dashboard Structure
+### State Management
+- **Zustand** (`src/stores/app-store.ts`) - Global state for sessions, messages, orders, inventory
+- Server components fetch from Supabase directly; client components use the store
 
-```
-reluvsa-dashboard/src/
-├── app/
-│   ├── (dashboard)/          # Protected routes with sidebar layout
-│   │   ├── page.tsx          # Dashboard home with metrics
-│   │   ├── pipeline/         # Kanban-style lead pipeline
-│   │   ├── conversations/    # Chat view with customers
-│   │   ├── cotizador/        # Quote generator
-│   │   ├── inventario/       # Inventory management
-│   │   ├── pedidos/          # Order management
-│   │   └── configuracion/    # Settings
-│   ├── login/                # Auth page
-│   └── auth/callback/        # Supabase auth callback
-├── components/
-│   ├── ui/                   # shadcn/ui components
-│   ├── pipeline/             # Drag-and-drop pipeline board
-│   ├── conversations/        # Chat components
-│   ├── pedidos/              # Order components
-│   └── cotizador/            # Quote form
-├── lib/
-│   ├── supabase/             # Supabase client (client.ts, server.ts, middleware.ts)
-│   ├── actions/              # Server actions for payments and orders
-│   └── pdf/                  # PDF quote generation with jsPDF
-├── stores/                   # Zustand stores
-└── types/database.ts         # TypeScript types for DB entities
-```
+### Authentication
+- Supabase Auth with middleware protection (`src/middleware.ts`)
+- Protected routes under `(dashboard)/` layout
+
+## Database Tables (Supabase)
+
+- `sesiones_chat` - Active chat sessions with conversation state, cart, pipeline_stage, atendido_por
+- `mensajes` - Message history (tipo: 'cliente' | 'bot' | 'vendedor')
+- `pedidos` - Orders with Stripe integration, tracking info, estado flow
+- `inventario` - Tire inventory (NEREUS and TORNEL brands)
+- `codigos_postales_locales` - Local zip codes for free shipping
 
 ## MCP Servers Configured
 
@@ -105,7 +108,8 @@ reluvsa-dashboard/src/
 - Brands: NEREUS and TORNEL only
 - Tire sizes must be normalized (e.g., "185 65 15" → "185/65R15")
 - MSI (monthly payments) only available in-store
-- Local shipping (within 50km of Ciudad Victoria) uses `codigos_postales_locales` table
+- Local delivery (Ciudad Victoria area) uses `codigos_postales_locales` table
+- Business constants in `src/lib/constants.ts` (NEGOCIO object)
 
 ## Environment Variables
 
