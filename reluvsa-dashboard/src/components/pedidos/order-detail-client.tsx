@@ -35,6 +35,9 @@ import {
   IconNote,
   IconLoader2,
   IconCash,
+  IconBuildingStore,
+  IconRobot,
+  IconWorld,
 } from '@tabler/icons-react'
 import { Pedido } from '@/types/database'
 import {
@@ -44,7 +47,7 @@ import {
   EstadoPedido,
 } from '@/lib/actions/pedidos'
 import { toast } from 'sonner'
-import { METODO_PAGO_CONFIG } from '@/lib/constants'
+import { METODO_PAGO_CONFIG, ORIGEN_VENTA_CONFIG } from '@/lib/constants'
 
 interface OrderDetailClientProps {
   pedido: Pedido & { numero_guia?: string; carrier?: string; notas?: string }
@@ -173,10 +176,28 @@ export function OrderDetailClient({ pedido }: OrderDetailClientProps) {
             </p>
           </div>
         </div>
-        <Badge className={`${config.color} text-sm px-3 py-1.5 gap-1.5 border`}>
-          {config.icon}
-          {config.label}
-        </Badge>
+        <div className="flex items-center gap-2">
+          {/* Badge de Origen */}
+          {pedido.origen && pedido.origen !== 'bot' && (
+            <Badge className={`${ORIGEN_VENTA_CONFIG[pedido.origen]?.bgColor || 'bg-gray-50'} ${ORIGEN_VENTA_CONFIG[pedido.origen]?.textColor || 'text-gray-700'} text-sm px-3 py-1.5 gap-1.5 border`}>
+              {pedido.origen === 'sucursal' ? (
+                <IconBuildingStore className="h-4 w-4" />
+              ) : pedido.origen === 'web' ? (
+                <IconWorld className="h-4 w-4" />
+              ) : pedido.origen === 'telefono' ? (
+                <IconPhone className="h-4 w-4" />
+              ) : (
+                <IconRobot className="h-4 w-4" />
+              )}
+              {ORIGEN_VENTA_CONFIG[pedido.origen]?.label || pedido.origen}
+            </Badge>
+          )}
+          {/* Badge de Estado */}
+          <Badge className={`${config.color} text-sm px-3 py-1.5 gap-1.5 border`}>
+            {config.icon}
+            {config.label}
+          </Badge>
+        </div>
       </div>
 
       {/* Status Actions */}
@@ -374,6 +395,16 @@ export function OrderDetailClient({ pedido }: OrderDetailClientProps) {
                 <p className="text-sm text-amber-800">
                   <IconCash className="h-4 w-4 inline mr-1.5" />
                   Pago en efectivo contra entrega. Coordinar cobro al momento de la entrega.
+                </p>
+              </div>
+            )}
+
+            {/* Sucursal specific notice */}
+            {(pedido.metodo_pago === 'efectivo_sucursal' || pedido.metodo_pago === 'tarjeta_sucursal') && (
+              <div className="pt-2 p-3 rounded-lg bg-purple-50 border border-purple-200">
+                <p className="text-sm text-purple-800">
+                  <IconBuildingStore className="h-4 w-4 inline mr-1.5" />
+                  Venta registrada en sucursal. Cliente recogió el producto.
                 </p>
               </div>
             )}

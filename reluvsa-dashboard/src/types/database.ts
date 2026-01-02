@@ -82,8 +82,14 @@ export interface Pedido {
   carrier?: string | null
   notas?: string | null
   // Método de pago
-  metodo_pago?: 'stripe' | 'efectivo_cod' | null
+  metodo_pago?: MetodoPago | null
+  // Origen de la venta (canal)
+  origen?: OrigenVenta
 }
+
+// Tipos para método de pago y origen
+export type MetodoPago = 'stripe' | 'efectivo_cod' | 'efectivo_sucursal' | 'tarjeta_sucursal'
+export type OrigenVenta = 'bot' | 'sucursal' | 'telefono' | 'web'
 
 export interface PedidoItem {
   medida: string

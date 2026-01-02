@@ -34,6 +34,14 @@ interface CotizacionData {
   discountValue?: number
 }
 
+// IVA Rate
+const IVA_RATE = 0.16
+
+// Helper para formatear moneda con 2 decimales
+const formatMoney = (amount: number): string => {
+  return amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
 // RELUVSA Brand Colors
 const COLORS = {
   yellow: [255, 237, 0] as [number, number, number],      // #FFED00
@@ -173,25 +181,35 @@ export async function generarCotizacionPDF(data: CotizacionData): Promise<void> 
 
   yPos += 8
 
-  // Productos del inventario
-  const tableDataInventario = items.map((item, idx) => [
-    (idx + 1).toString(),
-    item.producto.descripcion || '',
-    item.producto.medida || '',
-    item.cantidad.toString(),
-    `$${Number(item.producto.precio_con_iva).toLocaleString('es-MX')}`,
-    `$${(Number(item.producto.precio_con_iva) * item.cantidad).toLocaleString('es-MX')}`,
-  ])
+  // Productos del inventario (mostrar precio SIN IVA)
+  const tableDataInventario = items.map((item, idx) => {
+    const precioConIva = Number(item.producto.precio_con_iva)
+    const precioSinIva = precioConIva / (1 + IVA_RATE)
+    const subtotalSinIva = precioSinIva * item.cantidad
+    return [
+      (idx + 1).toString(),
+      item.producto.descripcion || '',
+      item.producto.medida || '',
+      item.cantidad.toString(),
+      `$${formatMoney(precioSinIva)}`,
+      `$${formatMoney(subtotalSinIva)}`,
+    ]
+  })
 
-  // Productos externos
-  const tableDataExternos = itemsExternos.map((item, idx) => [
-    (items.length + idx + 1).toString(),
-    `${item.descripcion} (Externo)`,
-    '-',
-    item.cantidad.toString(),
-    `$${item.precio.toLocaleString('es-MX')}`,
-    `$${(item.precio * item.cantidad).toLocaleString('es-MX')}`,
-  ])
+  // Productos externos (mostrar precio SIN IVA)
+  const tableDataExternos = itemsExternos.map((item, idx) => {
+    const precioConIva = item.precio
+    const precioSinIva = precioConIva / (1 + IVA_RATE)
+    const subtotalSinIva = precioSinIva * item.cantidad
+    return [
+      (items.length + idx + 1).toString(),
+      `${item.descripcion} (Externo)`,
+      '-',
+      item.cantidad.toString(),
+      `$${formatMoney(precioSinIva)}`,
+      `$${formatMoney(subtotalSinIva)}`,
+    ]
+  })
 
   // Combinar ambas tablas
   const tableData = [...tableDataInventario, ...tableDataExternos]
@@ -233,8 +251,12 @@ export async function generarCotizacionPDF(data: CotizacionData): Promise<void> 
   const totalsX = pageWidth - 85
   const totalsWidth = 65
 
+  // Calcular subtotal sin IVA y monto de IVA
+  const subtotalSinIva = subtotal / (1 + IVA_RATE)
+  const montoIva = subtotal - subtotalSinIva
+
   // Calculate box height based on options
-  let boxHeight = 40 // Base height for subtotal + total
+  let boxHeight = 50 // Base height for subtotal + IVA + total
   if (hasDiscount) boxHeight += 10
   if (incluyeEnvio) boxHeight += 10
   if (incluyeAlineacion) boxHeight += 10
@@ -249,7 +271,7 @@ export async function generarCotizacionPDF(data: CotizacionData): Promise<void> 
   doc.setTextColor(...COLORS.black)
   doc.setFont('helvetica', 'normal')
 
-  // Subtotal - mostrar conteo de llantas y externos si hay
+  // Subtotal SIN IVA - mostrar conteo de llantas y externos si hay
   const totalExternos = itemsExternos.reduce((sum, item) => sum + item.cantidad, 0)
   let subtotalLabel = `Subtotal (${totalLlantas} llanta${totalLlantas !== 1 ? 's' : ''}`
   if (totalExternos > 0) {
@@ -257,18 +279,23 @@ export async function generarCotizacionPDF(data: CotizacionData): Promise<void> 
   }
   subtotalLabel += '):'
   doc.text(subtotalLabel, totalsX, yPos + 5)
-  doc.text(`$${subtotal.toLocaleString('es-MX')}`, totalsX + totalsWidth, yPos + 5, { align: 'right' })
+  doc.text(`$${formatMoney(subtotalSinIva)}`, totalsX + totalsWidth, yPos + 5, { align: 'right' })
 
   let totalsYOffset = 12
 
-  // Discount
+  // IVA (16%)
+  doc.text('IVA (16%):', totalsX, yPos + 5 + totalsYOffset)
+  doc.text(`$${formatMoney(montoIva)}`, totalsX + totalsWidth, yPos + 5 + totalsYOffset, { align: 'right' })
+  totalsYOffset += 10
+
+  // Discount (se aplica después del IVA)
   if (hasDiscount) {
     const discountLabel = discountType === 'percentage'
       ? `Descuento (${discountValue}%):`
       : 'Descuento:'
     doc.setTextColor(...COLORS.green)
     doc.text(discountLabel, totalsX, yPos + 5 + totalsYOffset)
-    doc.text(`-$${descuento.toLocaleString('es-MX')}`, totalsX + totalsWidth, yPos + 5 + totalsYOffset, { align: 'right' })
+    doc.text(`-$${formatMoney(descuento)}`, totalsX + totalsWidth, yPos + 5 + totalsYOffset, { align: 'right' })
     doc.setTextColor(...COLORS.black)
     totalsYOffset += 10
   }
@@ -281,7 +308,7 @@ export async function generarCotizacionPDF(data: CotizacionData): Promise<void> 
       doc.text('GRATIS', totalsX + totalsWidth, yPos + 5 + totalsYOffset, { align: 'right' })
       doc.setTextColor(...COLORS.black)
     } else {
-      doc.text(`$${costoEnvio.toLocaleString('es-MX')}`, totalsX + totalsWidth, yPos + 5 + totalsYOffset, { align: 'right' })
+      doc.text(`$${formatMoney(costoEnvio)}`, totalsX + totalsWidth, yPos + 5 + totalsYOffset, { align: 'right' })
     }
     totalsYOffset += 10
   }
@@ -289,7 +316,7 @@ export async function generarCotizacionPDF(data: CotizacionData): Promise<void> 
   // Alignment
   if (incluyeAlineacion) {
     doc.text('Alineacion:', totalsX, yPos + 5 + totalsYOffset)
-    doc.text(`$${costoAlineacion.toLocaleString('es-MX')}`, totalsX + totalsWidth, yPos + 5 + totalsYOffset, { align: 'right' })
+    doc.text(`$${formatMoney(costoAlineacion)}`, totalsX + totalsWidth, yPos + 5 + totalsYOffset, { align: 'right' })
     totalsYOffset += 10
   }
 
@@ -298,12 +325,12 @@ export async function generarCotizacionPDF(data: CotizacionData): Promise<void> 
   doc.setLineWidth(0.5)
   doc.line(totalsX, yPos + totalsYOffset, totalsX + totalsWidth, yPos + totalsYOffset)
 
-  // Total amount
+  // Total amount (con IVA incluido - mismo valor que antes)
   doc.setFontSize(13)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...COLORS.red)
   doc.text('TOTAL:', totalsX, yPos + 10 + totalsYOffset)
-  doc.text(`$${total.toLocaleString('es-MX')} MXN`, totalsX + totalsWidth, yPos + 10 + totalsYOffset, { align: 'right' })
+  doc.text(`$${formatMoney(total)} MXN`, totalsX + totalsWidth, yPos + 10 + totalsYOffset, { align: 'right' })
 
   // ========== NOTES ==========
   yPos = yPos + totalsYOffset + 30
@@ -311,7 +338,7 @@ export async function generarCotizacionPDF(data: CotizacionData): Promise<void> 
   doc.setFontSize(9)
   doc.setTextColor(...COLORS.gray)
   doc.setFont('helvetica', 'italic')
-  doc.text('* Precios incluyen IVA', 20, yPos)
+  doc.text('* Precios antes de IVA', 20, yPos)
   doc.text('* Cotizacion valida por 7 dias', 20, yPos + 5)
   if (incluyeEnvio && costoEnvio === 0) {
     doc.text(`* Envio gratis por compra mayor a $${NEGOCIO.envioGratisMinimo.toLocaleString('es-MX')}`, 20, yPos + 10)

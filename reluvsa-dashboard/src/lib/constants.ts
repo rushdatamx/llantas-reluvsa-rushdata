@@ -19,7 +19,7 @@ export const PEDIDO_ESTADOS = {
 
 export const METODO_PAGO_CONFIG = {
   stripe: {
-    label: 'Tarjeta',
+    label: 'Tarjeta (Online)',
     shortLabel: 'Tarjeta',
     icon: 'CreditCard',
     bgColor: 'bg-blue-50',
@@ -28,11 +28,58 @@ export const METODO_PAGO_CONFIG = {
   },
   efectivo_cod: {
     label: 'Efectivo (COD)',
-    shortLabel: 'Efectivo',
+    shortLabel: 'COD',
     icon: 'Banknote',
     bgColor: 'bg-amber-50',
     textColor: 'text-amber-700',
     borderColor: 'border-amber-200',
+  },
+  efectivo_sucursal: {
+    label: 'Efectivo (Sucursal)',
+    shortLabel: 'Efectivo',
+    icon: 'Banknote',
+    bgColor: 'bg-green-50',
+    textColor: 'text-green-700',
+    borderColor: 'border-green-200',
+  },
+  tarjeta_sucursal: {
+    label: 'Tarjeta (Sucursal)',
+    shortLabel: 'Tarjeta',
+    icon: 'CreditCard',
+    bgColor: 'bg-indigo-50',
+    textColor: 'text-indigo-700',
+    borderColor: 'border-indigo-200',
+  },
+} as const
+
+export const ORIGEN_VENTA_CONFIG = {
+  bot: {
+    label: 'Bot WhatsApp',
+    shortLabel: 'Bot',
+    icon: 'IconRobot',
+    bgColor: 'bg-blue-50',
+    textColor: 'text-blue-700',
+  },
+  sucursal: {
+    label: 'Sucursal',
+    shortLabel: 'Sucursal',
+    icon: 'IconBuildingStore',
+    bgColor: 'bg-purple-50',
+    textColor: 'text-purple-700',
+  },
+  telefono: {
+    label: 'Teléfono',
+    shortLabel: 'Tel',
+    icon: 'IconPhone',
+    bgColor: 'bg-orange-50',
+    textColor: 'text-orange-700',
+  },
+  web: {
+    label: 'Web',
+    shortLabel: 'Web',
+    icon: 'IconWorld',
+    bgColor: 'bg-cyan-50',
+    textColor: 'text-cyan-700',
   },
 } as const
 
