@@ -34,7 +34,8 @@ WhatsApp → Twilio → n8n Workflow → Supabase Edge Function (chatbot-handler
   - `stripe-webhook` - Handles Stripe payment confirmations
   - `order-notification` - Sends order status notifications via WhatsApp
   - `create-payment-link` - Creates Stripe payment links
-- **Dashboard**: Next.js 16 app with Supabase auth, shadcn/ui components
+- **Dashboard**: Next.js app with Supabase auth, shadcn/ui components
+- **n8n Workflow Files**: `reluvsa-chatbot.json`, `notificacion-pedido-reluvsa.json` - exported workflow definitions
 
 ### Chat Session State Machine
 
@@ -60,6 +61,15 @@ Leads flow through: `explorando` → `cotizado` → `link_enviado` → `pagado` 
 
 Order state changes automatically sync the session's `pipeline_stage` via server actions.
 
+### Order Estado Flow
+
+Orders (`pedidos`) have their own state machine via the `estado` field:
+```
+pendiente_pago → pagado → enviado → entregado (or cancelado)
+```
+
+Estado changes trigger WhatsApp notifications to customers and sync the session's `pipeline_stage`.
+
 ## Commands
 
 ### Dashboard (reluvsa-dashboard/)
@@ -77,6 +87,7 @@ npm run lint     # Run ESLint
 Located in `src/lib/actions/`. These call Supabase Edge Functions and handle path revalidation:
 - `payment-link.ts` - Creates Stripe payment links via edge function
 - `pedidos.ts` - Updates order status, tracking info, syncs pipeline stages
+- `manual-sale.ts` - Register manual sales from physical store, link to existing leads
 
 ### State Management
 - **Zustand** (`src/stores/app-store.ts`) - Global state for sessions, messages, orders, inventory
@@ -86,13 +97,32 @@ Located in `src/lib/actions/`. These call Supabase Edge Functions and handle pat
 - Supabase Auth with middleware protection (`src/middleware.ts`)
 - Protected routes under `(dashboard)/` layout
 
+### Supabase Client
+Use the appropriate client based on context:
+- Server Components/Actions: `import { createClient } from '@/lib/supabase/server'`
+- Client Components: `import { createClient } from '@/lib/supabase/client'`
+
 ## Database Tables (Supabase)
 
 - `sesiones_chat` - Active chat sessions with conversation state, cart, pipeline_stage, atendido_por
 - `mensajes` - Message history (tipo: 'cliente' | 'bot' | 'vendedor')
-- `pedidos` - Orders with Stripe integration, tracking info, estado flow
+- `pedidos` - Orders with Stripe integration, tracking info, estado flow, origen, metodo_pago
 - `inventario` - Tire inventory (NEREUS and TORNEL brands)
 - `codigos_postales_locales` - Local zip codes for free shipping
+
+### Order Fields
+
+**origen** - Sales channel attribution:
+- `bot` - Sale originated and completed via WhatsApp bot (default)
+- `sucursal` - Manual sale registered at physical store
+- `telefono` - Future: phone sales
+- `web` - Future: direct web sales
+
+**metodo_pago** - Payment method:
+- `stripe` - Online card payment via Stripe
+- `efectivo_cod` - Cash on delivery
+- `efectivo_sucursal` - Cash at store
+- `tarjeta_sucursal` - Card at store
 
 ## MCP Servers Configured
 
@@ -103,13 +133,22 @@ Located in `src/lib/actions/`. These call Supabase Edge Functions and handle pat
 
 ## Business Logic Notes
 
-- All tire prices are **per unit** (por pieza)
+- All tire prices are **per unit** (por pieza) and **include IVA (16%)**
 - Shipping: Free on orders > $2,499 MXN, otherwise $299/pair
 - Brands: NEREUS and TORNEL only
 - Tire sizes must be normalized (e.g., "185 65 15" → "185/65R15")
 - MSI (monthly payments) only available in-store
 - Local delivery (Ciudad Victoria area) uses `codigos_postales_locales` table
 - Business constants in `src/lib/constants.ts` (NEGOCIO object)
+- PDF quotations show IVA breakdown (prices without IVA + IVA line + total with IVA)
+
+### Manual Sales (Sucursal)
+
+Vendors can register sales made at the physical store via `/pedidos` page:
+- Search existing leads by phone to link the sale (for bot attribution)
+- Or create sale for new customer without prior bot contact
+- Orders created as `estado: 'entregado'` (customer paid and took product)
+- Pipeline stage synced to `entregado` if lead is linked
 
 ## Environment Variables
 
