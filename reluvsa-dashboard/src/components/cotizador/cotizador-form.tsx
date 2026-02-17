@@ -65,6 +65,7 @@ interface CotizadorFormProps {
 interface ItemCotizacion {
   producto: ProductoInventario
   cantidad: number
+  precioOverride?: number // Precio manual, si difiere del inventario
 }
 
 interface ItemExterno {
@@ -169,6 +170,20 @@ export function CotizadorForm({ productos }: CotizadorFormProps) {
     setItems(items.filter((i) => i.producto.snapshot_id !== snapshotId))
   }
 
+  const getPrecioItem = (item: ItemCotizacion): number => {
+    return item.precioOverride ?? Number(item.producto.precio_con_iva)
+  }
+
+  const updatePrecio = (snapshotId: string, precio: number) => {
+    setItems(
+      items.map((i) =>
+        i.producto.snapshot_id === snapshotId
+          ? { ...i, precioOverride: precio }
+          : i
+      )
+    )
+  }
+
   // Funciones para productos externos
   const addItemExterno = () => {
     if (!externoDescripcion.trim() || externoPrecio <= 0) {
@@ -208,7 +223,7 @@ export function CotizadorForm({ productos }: CotizadorFormProps) {
   // Calculations
   // Subtotal de productos de inventario (llantas)
   const subtotalInventario = items.reduce(
-    (sum, item) => sum + (Number(item.producto.precio_con_iva) || 0) * item.cantidad,
+    (sum, item) => sum + getPrecioItem(item) * item.cantidad,
     0
   )
 
@@ -265,11 +280,12 @@ export function CotizadorForm({ productos }: CotizadorFormProps) {
 
     // Productos del inventario
     items.forEach((item) => {
+      const precio = getPrecioItem(item)
       texto += `${contador}. ${item.producto.descripcion}\n`
       texto += `   Medida: ${item.producto.medida}\n`
       texto += `   Cantidad: ${item.cantidad}\n`
-      texto += `   Precio unitario: $${Number(item.producto.precio_con_iva).toLocaleString('es-MX')} (IVA incluido)\n`
-      texto += `   Subtotal: $${(Number(item.producto.precio_con_iva) * item.cantidad).toLocaleString('es-MX')}\n\n`
+      texto += `   Precio unitario: $${precio.toLocaleString('es-MX')} (IVA incluido)\n`
+      texto += `   Subtotal: $${(precio * item.cantidad).toLocaleString('es-MX')}\n\n`
       contador++
     })
 
@@ -396,7 +412,7 @@ export function CotizadorForm({ productos }: CotizadorFormProps) {
           snapshot_id: item.producto.snapshot_id,
           descripcion: item.producto.descripcion || '',
           medida: item.producto.medida || '',
-          precio_con_iva: Number(item.producto.precio_con_iva),
+          precio_con_iva: getPrecioItem(item),
           cantidad: item.cantidad,
         })),
         items_externos: itemsExternos.map(item => ({
@@ -592,6 +608,7 @@ El link es seguro y puedes pagar con tarjeta de crédito o débito.
                   <TableHeader>
                     <TableRow>
                       <TableHead>Producto</TableHead>
+                      <TableHead className="w-[130px]">Precio</TableHead>
                       <TableHead className="w-[100px]">Cantidad</TableHead>
                       <TableHead className="text-right">Subtotal</TableHead>
                       <TableHead className="w-[50px]"></TableHead>
@@ -599,46 +616,86 @@ El link es seguro y puedes pagar con tarjeta de crédito o débito.
                   </TableHeader>
                   <TableBody>
                     {/* Productos del inventario */}
-                    {items.map((item) => (
-                      <TableRow key={item.producto.snapshot_id}>
-                        <TableCell>
-                          <div className="font-medium truncate max-w-[200px]">
-                            {item.producto.descripcion}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {item.producto.medida}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min={1}
-                            value={item.cantidad}
-                            onChange={(e) =>
-                              updateCantidad(
-                                item.producto.snapshot_id,
-                                parseInt(e.target.value) || 1
-                              )
-                            }
-                            className="w-20"
-                          />
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          ${(
-                            Number(item.producto.precio_con_iva) * item.cantidad
-                          ).toLocaleString('es-MX')}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeItem(item.producto.snapshot_id)}
-                          >
-                            <IconTrash className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {items.map((item) => {
+                      const precioActual = getPrecioItem(item)
+                      const precioOriginal = Number(item.producto.precio_con_iva)
+                      const precioModificado = item.precioOverride !== undefined && item.precioOverride !== precioOriginal
+                      return (
+                        <TableRow key={item.producto.snapshot_id}>
+                          <TableCell>
+                            <div className="font-medium truncate max-w-[200px]">
+                              {item.producto.descripcion}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {item.producto.medida}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <div className="relative">
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  step={0.01}
+                                  value={precioActual || ''}
+                                  onChange={(e) =>
+                                    updatePrecio(
+                                      item.producto.snapshot_id,
+                                      parseFloat(e.target.value) || 0
+                                    )
+                                  }
+                                  className={`w-28 pl-5 text-xs ${precioModificado ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/30' : ''}`}
+                                />
+                              </div>
+                              {precioModificado && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setItems(
+                                      items.map((i) =>
+                                        i.producto.snapshot_id === item.producto.snapshot_id
+                                          ? { ...i, precioOverride: undefined }
+                                          : i
+                                      )
+                                    )
+                                  }
+                                  className="text-[10px] text-amber-600 hover:text-amber-800 text-left"
+                                >
+                                  Original: ${precioOriginal.toLocaleString('es-MX')} ↩
+                                </button>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min={1}
+                              value={item.cantidad}
+                              onChange={(e) =>
+                                updateCantidad(
+                                  item.producto.snapshot_id,
+                                  parseInt(e.target.value) || 1
+                                )
+                              }
+                              className="w-20"
+                            />
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            ${(precioActual * item.cantidad).toLocaleString('es-MX')}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeItem(item.producto.snapshot_id)}
+                            >
+                              <IconTrash className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
                     {/* Productos externos */}
                     {itemsExternos.map((item) => (
                       <TableRow key={item.id}>
@@ -653,6 +710,7 @@ El link es seguro y puedes pagar con tarjeta de crédito o débito.
                             ${item.precio.toLocaleString('es-MX')} c/u
                           </div>
                         </TableCell>
+                        <TableCell />
                         <TableCell>
                           <Input
                             type="number"

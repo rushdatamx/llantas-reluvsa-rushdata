@@ -6,6 +6,7 @@ import { NEGOCIO } from '@/lib/constants'
 interface ItemCotizacion {
   producto: ProductoInventario
   cantidad: number
+  precioOverride?: number
 }
 
 interface ItemExterno {
@@ -183,7 +184,7 @@ export async function generarCotizacionPDF(data: CotizacionData): Promise<void> 
 
   // Productos del inventario (mostrar precio SIN IVA)
   const tableDataInventario = items.map((item, idx) => {
-    const precioConIva = Number(item.producto.precio_con_iva)
+    const precioConIva = item.precioOverride ?? Number(item.producto.precio_con_iva)
     const precioSinIva = precioConIva / (1 + IVA_RATE)
     const subtotalSinIva = precioSinIva * item.cantidad
     return [
