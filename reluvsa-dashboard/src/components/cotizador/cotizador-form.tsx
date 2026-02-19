@@ -706,11 +706,28 @@ El link es seguro y puedes pagar con tarjeta de crédito o débito.
                               Externo
                             </Badge>
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            ${item.precio.toLocaleString('es-MX')} c/u
+                        </TableCell>
+                        <TableCell>
+                          <div className="relative">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                            <Input
+                              type="number"
+                              min={0}
+                              step={0.01}
+                              value={item.precio || ''}
+                              onChange={(e) =>
+                                setItemsExternos(
+                                  itemsExternos.map((i) =>
+                                    i.id === item.id
+                                      ? { ...i, precio: parseFloat(e.target.value) || 0 }
+                                      : i
+                                  )
+                                )
+                              }
+                              className="w-28 pl-5 text-xs"
+                            />
                           </div>
                         </TableCell>
-                        <TableCell />
                         <TableCell>
                           <Input
                             type="number"

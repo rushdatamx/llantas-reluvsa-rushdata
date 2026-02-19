@@ -142,6 +142,15 @@ Use the appropriate client based on context:
 - Business constants in `src/lib/constants.ts` (NEGOCIO object)
 - PDF quotations show IVA breakdown (prices without IVA + IVA line + total with IVA)
 
+### Cotizador (Dashboard)
+
+The `/cotizador` page allows vendors to create manual quotations:
+- Search and add products from inventory + external (non-inventory) products
+- **Editable prices**: Unit prices default to inventory value but can be overridden per item (`precioOverride` in `ItemCotizacion`). Modified prices are highlighted in amber and can be reverted to the original.
+- Options: shipping toggle, alignment, discount (% or fixed amount)
+- Output: copy text for WhatsApp, download PDF, or generate Stripe payment link
+- All calculations (text preview, PDF, payment link) respect the overridden price
+
 ### Manual Sales (Sucursal)
 
 Vendors can register sales made at the physical store via `/pedidos` page:
