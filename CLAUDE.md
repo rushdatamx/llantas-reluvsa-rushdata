@@ -135,7 +135,7 @@ Use the appropriate client based on context:
 
 - All tire prices are **per unit** (por pieza) and **include IVA (16%)**
 - Shipping: Free on orders > $2,499 MXN, otherwise $299/pair
-- Brands: NEREUS and TORNEL only
+- Brands: NEREUS (uso general, modelo NS601) and TORNEL/JK (uso general + todo terreno AT-09, AT-909, BLAZZE X-A/T)
 - Tire sizes must be normalized (e.g., "185 65 15" → "185/65R15")
 - MSI (monthly payments) only available in-store
 - Local delivery (Ciudad Victoria area) uses `codigos_postales_locales` table
@@ -148,6 +148,7 @@ The `/cotizador` page allows vendors to create manual quotations:
 - Search and add products from inventory + external (non-inventory) products
 - **Editable prices**: Unit prices default to inventory value but can be overridden per item (`precioOverride` in `ItemCotizacion`). Modified prices are highlighted in amber and can be reverted to the original.
 - Options: shipping toggle, alignment, discount (% or fixed amount)
+- **Términos y Condiciones**: Toggle to include customizable T&C in PDF and WhatsApp text. Fields: vigencia (default "7 días"), tiempo de entrega, forma de pago, notas adicionales. When OFF, static notes are shown (backwards compatible). Data passed as `terminosCondiciones` optional object to `generarCotizacionPDF()`.
 - Output: copy text for WhatsApp, download PDF, or generate Stripe payment link
 - All calculations (text preview, PDF, payment link) respect the overridden price
 
