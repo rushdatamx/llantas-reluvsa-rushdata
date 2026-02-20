@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { SesionChat, Profile } from '@/types/database'
+import { useAppStore } from '@/stores/app-store'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -18,12 +19,11 @@ interface ConversationListProps {
   selectedId?: string
 }
 
-type FilterType = 'mias' | 'todas' | 'handoff' | 'bot'
-
 export function ConversationList({ initialSesiones, selectedId }: ConversationListProps) {
   const [sesiones, setSesiones] = useState<SesionChat[]>(initialSesiones)
   const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState<FilterType>('todas')
+  const filter = useAppStore((s) => s.conversationFilter)
+  const setFilter = useAppStore((s) => s.setConversationFilter)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [profiles, setProfiles] = useState<Record<string, Profile>>({})
   const router = useRouter()
@@ -151,7 +151,7 @@ export function ConversationList({ initialSesiones, selectedId }: ConversationLi
           />
         </div>
 
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as FilterType)}>
+        <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
           <TabsList className="w-full grid grid-cols-4">
             <TabsTrigger value="mias" className="gap-1 text-xs px-1">
               <IconUserCircle className="h-3 w-3" />

@@ -24,6 +24,8 @@ interface AppState {
   // UI State
   isSidebarOpen: boolean
   toggleSidebar: () => void
+  conversationFilter: 'mias' | 'todas' | 'handoff' | 'bot'
+  setConversationFilter: (filter: 'mias' | 'todas' | 'handoff' | 'bot') => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -51,4 +53,6 @@ export const useAppStore = create<AppState>((set) => ({
   // UI
   isSidebarOpen: true,
   toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+  conversationFilter: 'todas',
+  setConversationFilter: (filter) => set({ conversationFilter: filter }),
 }))
