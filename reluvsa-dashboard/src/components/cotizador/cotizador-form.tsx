@@ -90,6 +90,13 @@ export function CotizadorForm({ productos }: CotizadorFormProps) {
   const [discountType, setDiscountType] = useState<DiscountType>('none')
   const [discountValue, setDiscountValue] = useState<number>(0)
 
+  // Estado para Términos y Condiciones
+  const [mostrarTerminos, setMostrarTerminos] = useState(false)
+  const [vigencia, setVigencia] = useState('7 días')
+  const [tiempoEntrega, setTiempoEntrega] = useState('')
+  const [formaPago, setFormaPago] = useState('')
+  const [notasExtra, setNotasExtra] = useState('')
+
   // Estado para el formulario de producto externo
   const [externoDialogOpen, setExternoDialogOpen] = useState(false)
   const [externoDescripcion, setExternoDescripcion] = useState('')
@@ -322,8 +329,22 @@ export function CotizadorForm({ productos }: CotizadorFormProps) {
     }
 
     texto += `\n*TOTAL: $${total.toLocaleString('es-MX')} MXN*\n`
-    texto += `\n_Precios incluyen IVA_\n`
-    texto += `_Cotización válida por 7 días_\n`
+
+    if (mostrarTerminos) {
+      texto += `\n*TÉRMINOS Y CONDICIONES:*\n`
+      if (vigencia) texto += `• Vigencia: ${vigencia}\n`
+      if (tiempoEntrega) texto += `• Tiempo de entrega: ${tiempoEntrega}\n`
+      if (formaPago) texto += `• Forma de pago: ${formaPago}\n`
+      if (notasExtra) {
+        notasExtra.split('\n').filter(l => l.trim()).forEach(linea => {
+          texto += `• ${linea.trim()}\n`
+        })
+      }
+    } else {
+      texto += `\n_Precios incluyen IVA_\n`
+      texto += `_Cotización válida por 7 días_\n`
+    }
+
     texto += `\n📍 ${NEGOCIO.direccion}\n`
     texto += `📞 ${NEGOCIO.telefono}\n`
 
@@ -365,6 +386,12 @@ export function CotizadorForm({ productos }: CotizadorFormProps) {
         descuento,
         discountType,
         discountValue,
+        terminosCondiciones: mostrarTerminos ? {
+          vigencia: vigencia || undefined,
+          tiempoEntrega: tiempoEntrega || undefined,
+          formaPago: formaPago || undefined,
+          notasExtra: notasExtra || undefined,
+        } : undefined,
       })
       toast.success('PDF generado correctamente')
     } catch (error) {
@@ -850,6 +877,61 @@ El link es seguro y puedes pagar con tarjeta de crédito o débito.
                 </p>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Términos y Condiciones</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Incluir Términos y Condiciones</Label>
+                <p className="text-xs text-muted-foreground">
+                  Aparecerán en el PDF y texto de WhatsApp
+                </p>
+              </div>
+              <Switch checked={mostrarTerminos} onCheckedChange={setMostrarTerminos} />
+            </div>
+
+            {mostrarTerminos && (
+              <div className="space-y-3 pt-2 border-t">
+                <div className="space-y-2">
+                  <Label>Vigencia</Label>
+                  <Input
+                    placeholder="Ej: 7 días"
+                    value={vigencia}
+                    onChange={(e) => setVigencia(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tiempo de entrega</Label>
+                  <Input
+                    placeholder="Ej: 3 a 5 días hábiles"
+                    value={tiempoEntrega}
+                    onChange={(e) => setTiempoEntrega(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Forma de pago</Label>
+                  <Input
+                    placeholder="Ej: Crédito 30 días"
+                    value={formaPago}
+                    onChange={(e) => setFormaPago(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Notas adicionales</Label>
+                  <Textarea
+                    placeholder="Condiciones adicionales..."
+                    value={notasExtra}
+                    onChange={(e) => setNotasExtra(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

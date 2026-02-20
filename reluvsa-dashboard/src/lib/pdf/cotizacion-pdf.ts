@@ -33,6 +33,12 @@ interface CotizacionData {
   descuento?: number
   discountType?: DiscountType
   discountValue?: number
+  terminosCondiciones?: {
+    vigencia?: string
+    tiempoEntrega?: string
+    formaPago?: string
+    notasExtra?: string
+  }
 }
 
 // IVA Rate
@@ -333,16 +339,61 @@ export async function generarCotizacionPDF(data: CotizacionData): Promise<void> 
   doc.text('TOTAL:', totalsX, yPos + 10 + totalsYOffset)
   doc.text(`$${formatMoney(total)} MXN`, totalsX + totalsWidth, yPos + 10 + totalsYOffset, { align: 'right' })
 
-  // ========== NOTES ==========
+  // ========== NOTES / TÉRMINOS Y CONDICIONES ==========
   yPos = yPos + totalsYOffset + 30
 
+  const tc = data.terminosCondiciones
+
+  if (tc) {
+    // Render T&C section with styled header
+    doc.setFontSize(12)
+    doc.setTextColor(...COLORS.red)
+    doc.setFont('helvetica', 'bold')
+    doc.text('TERMINOS Y CONDICIONES', 20, yPos)
+
+    // Red underline
+    doc.setDrawColor(...COLORS.red)
+    doc.setLineWidth(0.5)
+    doc.line(20, yPos + 2, 95, yPos + 2)
+
+    yPos += 10
+    doc.setFontSize(9)
+    doc.setTextColor(...COLORS.black)
+    doc.setFont('helvetica', 'normal')
+
+    if (tc.vigencia) {
+      doc.text(`• Vigencia: ${tc.vigencia}`, 22, yPos)
+      yPos += 5
+    }
+    if (tc.tiempoEntrega) {
+      doc.text(`• Tiempo de entrega: ${tc.tiempoEntrega}`, 22, yPos)
+      yPos += 5
+    }
+    if (tc.formaPago) {
+      doc.text(`• Forma de pago: ${tc.formaPago}`, 22, yPos)
+      yPos += 5
+    }
+    if (tc.notasExtra) {
+      tc.notasExtra.split('\n').filter(l => l.trim()).forEach(linea => {
+        doc.text(`• ${linea.trim()}`, 22, yPos)
+        yPos += 5
+      })
+    }
+
+    yPos += 3
+  }
+
+  // Static notes (always shown)
   doc.setFontSize(9)
   doc.setTextColor(...COLORS.gray)
   doc.setFont('helvetica', 'italic')
   doc.text('* Precios antes de IVA', 20, yPos)
-  doc.text('* Cotizacion valida por 7 dias', 20, yPos + 5)
+  if (!tc) {
+    doc.text('* Cotizacion valida por 7 dias', 20, yPos + 5)
+  }
   if (incluyeEnvio && costoEnvio === 0) {
-    doc.text(`* Envio gratis por compra mayor a $${NEGOCIO.envioGratisMinimo.toLocaleString('es-MX')}`, 20, yPos + 10)
+    const envioNoteY = tc ? yPos + 5 : yPos + 10
+    doc.text(`* Envio gratis por compra mayor a $${NEGOCIO.envioGratisMinimo.toLocaleString('es-MX')}`, 20, envioNoteY)
   }
 
   // ========== FOOTER WITH YELLOW BANNER ==========
